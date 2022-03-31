@@ -2,6 +2,7 @@ from mesa import Model
 from mesa.datacollection import DataCollector
 from mesa.space import Grid
 from mesa.time import RandomActivation
+import time
 
 from .agent import TreeCell
 
@@ -20,7 +21,6 @@ class ForestFire(Model):
         Args:
             width, height: The size of the grid to model
             density: What fraction of grid cells have a tree in them.
-            biome: True for amazon, False for cerrado
         """
         # Set up model objects
         self.schedule = RandomActivation(self)
@@ -41,6 +41,7 @@ class ForestFire(Model):
                 "Fine": lambda m: self.count_type(m, "Fine"),
                 "On Fire": lambda m: self.count_type(m, "On Fire"),
                 "Burned Out": lambda m: self.count_type(m, "Burned Out"),
+                "Reforested": lambda m: self.count_type(m, "Reforested"),
             }
         )
 
@@ -59,9 +60,12 @@ class ForestFire(Model):
                 self.schedule.add(new_tree)
 
         self.running = True
+
+    
         self.datacollector.collect(self)
 
     def step(self):
+
         """
         Advance the model by one step.
         """
@@ -71,7 +75,24 @@ class ForestFire(Model):
 
         # Halt if no more fire
         if self.count_type(self, "On Fire") == 0:
-            self.running = False
+
+            self.start_reforest(self)            
+
+            if self.count_type(self, "Burned Out") == 0:
+
+                self.running = False
+
+    
+    @staticmethod
+    def start_reforest(model):
+        
+        for tree in model.schedule.agents:
+            
+            tree.reforest = True
+
+        return
+
+
 
     @staticmethod
     def count_type(model, tree_condition):
@@ -81,5 +102,17 @@ class ForestFire(Model):
         count = 0
         for tree in model.schedule.agents:
             if tree.condition == tree_condition:
+                count += 1
+        return count
+
+    
+    @staticmethod
+    def count_changed(model):
+        """
+        Helper method to count trees in a given condition in a given model.
+        """
+        count = 0
+        for tree in model.schedule.agents:
+            if tree.changed == True:
                 count += 1
         return count

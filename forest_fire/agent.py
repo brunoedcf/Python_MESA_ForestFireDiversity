@@ -15,6 +15,7 @@ class TreeCell(Agent):
     practice to give one to each agent anyway.
     """
 
+
     def __init__(self, pos, model, biome):
         """
         Create a new tree.
@@ -27,6 +28,8 @@ class TreeCell(Agent):
         self.pos = pos
         self.condition = "Fine"
         self.biome = biome
+        self.reforest = False
+        self.changed = True
 
     def step(self):
         """
@@ -39,6 +42,7 @@ class TreeCell(Agent):
                    Pantanal: Fogo não espalha
         """
         if self.condition == "On Fire":
+
             if self.biome != "Default":
                 for neighbor in self.model.grid.neighbor_iter(self.pos):
                     if neighbor.condition == "Fine":
@@ -63,3 +67,17 @@ class TreeCell(Agent):
                             neighbor.condition = "On Fire"
 
             self.condition = "Burned Out"
+
+        elif self.reforest == True:
+
+            self.changed = False
+
+            if self.condition == "Fine" or self.condition == "Reforested":
+                for neighbor in self.model.grid.neighbor_iter(self.pos):
+                    if neighbor.condition == "Burned Out":
+                        ref = random.randint(0, 100)
+
+                        if ref >= 96:
+                            neighbor.condition = "Reforested"
+                            neighbor.changed = True        
+
